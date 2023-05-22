@@ -6,10 +6,11 @@ from typing import Any, Dict, List
 
 import lsprotocol.converters as lsp_con
 import lsprotocol.types as lsp_types
+import pylsp.lsp as pylsp_lsp
+import pylsp.workspace as pylsp_ws
 import pyre_check.client.language_server.protocol as pyre_proto
 from pylsp import hookimpl
 from pylsp.config.config import Config
-from pylsp.workspace import Document, Workspace
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def pylsp_settings() -> Dict[str, Dict[str, Dict[str, bool]]]:
 
 
 @hookimpl
-def pylsp_initialize(config: Config, workspace: Workspace) -> None:
+def pylsp_initialize(config: Config, workspace: pylsp_ws.Workspace) -> None:
     """
     Checks for a Pyre configuration existence.
 
@@ -61,7 +62,7 @@ def pylsp_initialize(config: Config, workspace: Workspace) -> None:
 
 @hookimpl
 def pylsp_lint(
-    config: Config, workspace: Workspace, document: Document, is_saved: bool
+    config: Config, workspace: pylsp_ws.Workspace, document: pylsp_ws.Document, is_saved: bool
 ) -> List[Dict[str, Any]]:
     """
     Lints files (saved, not in-progress) and returns found problems.
@@ -70,9 +71,7 @@ def pylsp_lint(
     if is_saved:
         with workspace.report_progress("lint: pyre check", "running"):
             settings = config.plugin_settings("pyre")
-            diagnostics = run_pyre(
-                root_path=workspace.root_path, document=document, settings=settings
-            )
+            diagnostics = run_pyre(workspace=workspace, document=document, settings=settings)
         workspace.show_message(message=f"Pyre reported {len(diagnostics)} issue(s).")
         # Deal with location stuff by using unstructure() for now.
         return lsp_con.get_converter().unstructure(diagnostics)
@@ -80,27 +79,35 @@ def pylsp_lint(
         return []
 
 
-def add_pyre_config(root_path: str) -> None:
+def abend(message: str, workspace: pylsp_ws.Workspace) -> Dict[str, Any]:
     """
-        {
-      "site_package_search_strategy": "all",
-      "source_directories": [
-        "."
-      ],
-      "exclude": [
-        "\/setup.py",
-        ".*\/build\/.*"
-      ]
+    Deals with exceptions that Pyre might throw via subprocess.
+
+    Basically, make it visible in as many ways as possible - logging, workspace messaging, and
+    actual lint results.
+    """
+    logger.exception(message)
+    workspace.show_message(message=message, msg_type=pylsp_lsp.MessageType.Error)
+    return {
+        "source": "pyre",
+        "severity": lsp_types.DiagnosticSeverity.Error,
+        "code": "E999",
+        "message": message,
+        "range": pyre_proto.LspRange(
+            start=pyre_proto.LspPosition(line=0, character=0),
+            end=pyre_proto.LspPosition(line=0, character=1),
+        ),
     }
-    """
 
 
-def run_pyre(root_path: str, document: Document, settings: Dict) -> List[Dict[str, Any]]:
+def run_pyre(
+    workspace: pylsp_ws.Workspace, document: pylsp_ws.Document, settings: Dict
+) -> List[Dict[str, Any]]:
     """
     Calls Pyre, converts output to internal structs
     """
     try:
-        data = really_run_pyre(root_path=root_path)
+        data = really_run_pyre(root_path=workspace.root_path)
         data = json.loads(data.decode("utf-8"))
         checks = [
             {
@@ -114,14 +121,16 @@ def run_pyre(root_path: str, document: Document, settings: Dict) -> List[Dict[st
                         line=(x["stop_line"] - 1), character=x["stop_column"]
                     ),
                 ),
-                # "filename": x["path"],
             }
             for x in data
-            if document.path == f"{root_path}/{x['path']}"
+            if document.path == f"{workspace.root_path}/{x['path']}"
         ]
+    except subprocess.CalledProcessError as e:
+        msg = f"ABEND: Pyre failed: {str(e)}. {e.stderr.decode('utf-8')}"
+        checks = [abend(message=msg, workspace=workspace)]
     except Exception as e:
-        logger.exception(f"ABEND: Pyre call raised {type(e)} - {str(e)}")
-        checks = []
+        msg = f"ABEND: Catchall {type(e)} - {str(e)}"
+        checks = [abend(message=msg, workspace=workspace)]
 
     return checks
 
