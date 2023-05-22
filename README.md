@@ -1,6 +1,6 @@
 # python-lsp-pyre
 
-Implements support for calling Meta's Pyre type checker via a subprocess.
+Implements support for calling Meta's [Pyre type checker](https://github.com/facebook/pyre-check) via a subprocess.
 
 This is a plugin for the [Python LSP Server](https://github.com/python-lsp/python-lsp-server).
 
