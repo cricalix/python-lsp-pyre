@@ -34,4 +34,4 @@ jobs:
       run: poetry build
       
     - name: Publish distribution 📦
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      uses: pypa/gh-action-pypi-publish@f47b34707fd264d5ddb1ef322ca74cf8e4cf351b
