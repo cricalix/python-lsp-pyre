@@ -4,6 +4,7 @@ on:
   release:
     types: [published]
 
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -19,7 +20,7 @@ jobs:
       run: pipx install poetry
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     

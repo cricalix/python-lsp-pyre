@@ -2,7 +2,7 @@
 name = "python-lsp-pyre"
 version = "0.1.0"
 description = "Pyre linting plugin for pylsp"
-authors = ["Duncan Hill <github.commits@cricalix.net>"]
+authors = ["Duncan Hill <python.projects@cricalix.net>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "pylsp_pyre"}]
@@ -22,7 +22,7 @@ isort = "^5.12.0"
 pyre = "pylsp_pyre.plugin"
 
 [tool.black]
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310', 'py311']
+target-version = ['py39', 'py310', 'py311']
 line-length = 94
 
 [tool.ruff]
