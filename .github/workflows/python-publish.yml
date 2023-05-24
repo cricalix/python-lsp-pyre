@@ -10,6 +10,9 @@ jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
+    environment:
+      name: deploy
+      url: https://pypi.org/p/python-lsp-pyre
     permissions:
       id-token: write
 
