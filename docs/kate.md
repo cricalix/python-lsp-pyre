@@ -8,14 +8,25 @@ In Settings > LSP Client > User Server Settings (normally found at `$USER/.confi
 
 ```json
 {
-    "servers": {
-        "python": {
-            "command": ["poetry", "run", "pylsp", "--check-parent-process" ],
-            "rootIndicationFileNames": ["poetry.lock", "pyproject.toml"],
-            "url": "https://github.com/python-lsp/python-lsp-server",
-            "highlightingModeRegex": "^Python$"
-        }
+  "servers": {
+    "python": {
+      "command": [
+        "poetry",
+        "run",
+        "pylsp",
+        "--check-parent-process",
+        "--verbose",
+        "--log-file",
+        "/tmp/pylsp"
+      ],
+      "rootIndicationFileNames": [
+        "poetry.lock",
+        "pyproject.toml"
+      ],
+      "url": "https://github.com/python-lsp/python-lsp-server",
+      "highlightingModeRegex": "^Python$"
     }
+  }
 }
 ```
 
@@ -28,3 +39,26 @@ If you wish to have a log file then add `, "--log-file", "/tmp/pylsp"` after `--
 The Python Language Server documentation supercedes the above instructions.
 
 The **rootIndicationFileNames** entry is used to ensure that the correct root directory is passed to the language server on requests for linting etcetera, assuming that the project has a **pyproject.toml** file.
+
+To pass [configuration options](Configuration.md) to the server, use the `settings` sub-key, splitting out each component of the key on the dot to make it a JSON structure key.
+
+For example, `pylsp.plugins.pyre.create-pyre-config` would be converted to:
+
+```json
+{
+  "servers": {
+    "python": {
+      "command": ["..."],
+      "settings": {
+        "pylsp": {
+          "plugins": {
+            "pyre": {
+              "create-pyre-config": true
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
