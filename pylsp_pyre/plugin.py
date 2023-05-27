@@ -107,23 +107,27 @@ def run_pyre(
         # path for now. This means that the Pyre output is less useful, because things like
         # type changes on a commonly included attribute in one module will not show as
         # problems in other modules unless the command line is used :(
-        checks = [
-            {
-                "source": "pyre",
-                "severity": lsp_types.DiagnosticSeverity.Error,
-                "code": x["code"],
-                "message": x["long_description"],
-                "range": pyre_proto.LspRange(
+        pyre_url = "https://pyre-check.org/docs/errors/"
+        checks = []
+        for x in data:
+            if document.path == f"{workspace.root_path}/{x['path']}":
+                uri = f"{pyre_url}#{x['code']}-{x['name'].replace(' ', '-').lower()}"
+                check_range = pyre_proto.LspRange(
                     start=pyre_proto.LspPosition(line=(x["line"] - 1), character=x["column"]),
                     end=pyre_proto.LspPosition(
                         line=(x["stop_line"] - 1), character=x["stop_column"]
                     ),
-                ),
-                "path": x["path"]
-            }
-            for x in data
-            if document.path == f"{workspace.root_path}/{x['path']}"
-        ]
+                )
+                checks.append(
+                    {
+                        "source": "pyre",
+                        "severity": lsp_types.DiagnosticSeverity.Error,
+                        "code": x["code"],
+                        "message": x["long_description"],
+                        "range": check_range,
+                        "codeDescription": {"href": uri},
+                    }
+                )
     except subprocess.CalledProcessError as e:
         msg = f"ABEND: Pyre failed: {str(e)}. {e.stderr.decode('utf-8')}"
         checks = [abend(message=msg, workspace=workspace)]
