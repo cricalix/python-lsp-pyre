@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-lsp-pyre"
-version = "0.1.2"
+version = "0.1.3"
 description = "Pyre linting plugin for pylsp"
 authors = ["Duncan Hill <python.projects@cricalix.net>"]
 license = "MIT"

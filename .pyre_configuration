@@ -5,6 +5,8 @@
     ],
     "exclude": [
         "/setup.py",
-        ".*/build/.*"
-    ]
+        ".*/build/.*",
+        ".*/.pyre/.*"
+    ],
+    "strict": true
 }
